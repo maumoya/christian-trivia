@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Christian Trivia · Creation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grandstander:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: one screen — top strip (name + 8 day cards), the world canvas, the story panel under it. Single storybook look by choice (the world itself goes dark to golden). */
+:root{
+  --dusk:#0b1424;      /* the deep before day 1: page ground */
+  --paper:#f3f7ff;     /* story panel */
+  --ink:#1b2340;
+  --muted:#58628a;
+  --sun:#ffc93c;       /* the one bold accent: light */
+  --sun-deep:#d99a00;
+  --sea:#2f6fb0;
+  --leaf:#3f9d5a;
+  --ghost:#d5dbea;
+  --display:"Grandstander","Chalkboard SE","Comic Sans MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--dusk);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.45}
+.app{min-height:100%;max-width:1060px;margin:0 auto;display:flex;flex-direction:column;gap:10px;
+  padding-block:10px 16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.name{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.06em;color:var(--sun);margin:0;line-height:1}
+.name small{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9fb0d6;font-family:var(--body);font-weight:700;margin-top:3px}
+.cards{display:flex;gap:6px;flex:1;min-width:0;flex-wrap:wrap}
+.slot{width:34px;height:42px;border-radius:7px;border:2px dashed #34456b;display:grid;place-items:center;font-family:var(--display);font-weight:800;color:#34456b;font-size:15px}
+.slot.on{border:2px solid var(--sun);background:var(--sun);color:var(--ink);box-shadow:0 0 14px rgba(255,201,60,.45)}
+.tools{display:flex;gap:6px}
+.tool{background:#1a2742;color:#dfe7fb;border:1px solid #34456b;border-radius:999px;padding:7px 12px;font:700 13px var(--body);cursor:pointer}
+.tool[aria-pressed="true"]{background:var(--sun);color:var(--ink);border-color:var(--sun)}
+.stage{position:relative;border-radius:18px;overflow:hidden;background:#08111f;box-shadow:0 10px 40px rgba(0,0,0,.45)}
+canvas{display:block;width:100%;height:auto;aspect-ratio:1000/560;max-width:100%;cursor:pointer;touch-action:manipulation}
+.panel{background:var(--paper);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.panel h2{font-family:var(--display);font-weight:800;font-size:26px;margin:0;text-wrap:balance;line-height:1.15}
+.eyebrow{font:700 12px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.story{font-size:20px;max-width:65ch;margin:0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{font:800 18px var(--display);border:0;border-radius:14px;padding:12px 22px;cursor:pointer;background:var(--sun);color:var(--ink);box-shadow:0 4px 0 var(--sun-deep)}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--sun-deep)}
+.btn.quiet{background:#e3e9f8;box-shadow:0 4px 0 #c3cce3}
+.tip{font-size:15px;color:var(--muted);margin:0}
+.answers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ans{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:16px;border:3px solid #c9d3ec;background:#fff;cursor:pointer;font:700 17px var(--body);color:var(--ink)}
+.ans .pic{font-size:40px;line-height:1}
+.ans:hover{border-color:var(--sea)}
+.ans.no{opacity:.4;border-style:dashed;cursor:default}
+.ans.yes{border-color:var(--leaf);background:#e6f6ea}
+.hint{background:#fff6d6;border-radius:12px;padding:10px 14px;margin:0;font-size:17px}
+.won{display:flex;gap:14px;align-items:center}
+.won .big{width:58px;height:70px;border-radius:10px;background:var(--sun);display:grid;place-items:center;font:800 26px var(--display);box-shadow:0 0 22px rgba(255,201,60,.6);flex:none}
+.recap{display:flex;gap:8px;flex-wrap:wrap}
+.recap span{background:#fff;border:2px solid var(--sun);border-radius:10px;padding:6px 10px;font-size:15px;font-weight:700}
+blockquote{margin:0;font-family:var(--display);font-weight:600;font-size:22px;line-height:1.3;max-width:40ch}
+cite{display:block;font:700 13px var(--body);color:var(--muted);font-style:normal;margin-top:4px;letter-spacing:.04em}
+select,input{font:700 16px var(--body);padding:8px 10px;border-radius:10px;border:2px solid #c9d3ec;background:#fff;color:var(--ink)}
+:focus-visible{outline:3px solid var(--sea);outline-offset:2px}
+dialog{border:0;border-radius:18px;padding:22px;max-width:min(460px,calc(100% - 32px));background:var(--paper);color:var(--ink)}
+dialog::backdrop{background:rgba(5,10,20,.7)}
+dialog h3{font-family:var(--display);margin:0 0 8px;font-size:22px}
+.list{margin:0;padding-left:18px;font-size:15px;color:var(--muted)}
+.list li+li{margin-top:4px}
+@media (max-width:560px){
+  .story{font-size:18px}
+  .ans{padding:10px 4px;font-size:14px}
+  .ans .pic{font-size:32px}
+  .slot{width:28px;height:36px;font-size:13px}
+  .name{font-size:24px}
+}
+@media (prefers-reduced-motion:reduce){.btn:active{transform:none}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <h1 class="name">Christian Trivia<small>Chapter 1 · Creation</small></h1>
+    <div class="cards" id="cards" aria-label="Timeline cards"></div>
+    <div class="tools">
+      <button class="tool" id="langBtn" type="button">ES</button>
+      <button class="tool" id="soundBtn" type="button" aria-pressed="true">🔊</button>
+      <button class="tool" id="adultBtn" type="button">Grown-ups</button>
+    </div>
+  </header>
+  <div class="stage"><canvas id="world" width="1000" height="560" aria-label="The world God is making"></canvas></div>
+  <section class="panel" id="panel" aria-live="polite"></section>
+</div>
+
+<dialog id="adult">
+  <div id="adultBody"></div>
+</dialog>
+
+<script>
+(() => {
+/* ---------- content (from the Chapter 1 content sheet, draft) ---------- */
+const UI = {
+  en:{start:"Start Chapter 1",cont:"Keep going",listen:"Listen",tap:"Tap the glowing light to see what God makes.",walk:"Tap the ground to walk Adam to the glowing light.",name:"Tap each animal so Adam can name it.",hintT:"Hint",next:"Next",card:"You got a card!",doneT:"Chapter 1 complete",read:"Read the timeline",verse:"Memory verse",today:"Try this today",stop:"Great place to stop!",again:"Play again",intro:"In the beginning… Let’s see what God made, day by day.",genesis:"Genesis 1 and 2",praise:["Yes!","That’s right!","Well done!"],named:"named"},
+  es:{start:"Empezar el Capítulo 1",cont:"Seguir",listen:"Escuchar",tap:"Toca la luz brillante para ver lo que Dios hace.",walk:"Toca el suelo para llevar a Adán a la luz brillante.",name:"Toca cada animal para que Adán le ponga nombre.",hintT:"Pista",next:"Siguiente",card:"¡Ganaste una tarjeta!",doneT:"Capítulo 1 completo",read:"Leer la línea del tiempo",verse:"Versículo para memorizar",today:"Prueba esto hoy",stop:"¡Buen lugar para parar!",again:"Jugar otra vez",intro:"En el principio… Veamos lo que Dios hizo, día por día.",genesis:"Génesis 1 y 2",praise:["¡Sí!","¡Muy bien!","¡Correcto!"],named:"nombrado"}
+};
+const A = (p,en,es,ok) => ({p,en,es,ok:!!ok});
+const SCENES = [
+ {day:1,ref:"Gen 1:1–5",spot:[500,240],
+  nar:{en:"In the beginning, there was only dark water. God’s Spirit moved over the water. Then God spoke: “Let there be light!”",es:"Al principio solo había agua oscura. El Espíritu de Dios se movía sobre el agua. Entonces Dios habló: “¡Que haya luz!”"},
+  qs:[{q:{en:"What did God make when He spoke?",es:"¿Qué hizo Dios cuando habló?"},a:[A("✨","light","luz",1),A("🏠","a house","una casa"),A("🐟","a fish","un pez")],hint:{en:"Watch the dark again. What filled it?",es:"Mira la oscuridad otra vez. ¿Qué la llenó?"}}],
+  card:{en:"Day 1: Light",es:"Día 1: La luz"}},
+ {day:2,ref:"Gen 1:6–8",spot:[500,140],
+  nar:{en:"God made a big open space between the waters. Water below, and the sky up above.",es:"Dios hizo un gran espacio entre las aguas. Agua abajo, y el cielo arriba."},
+  qs:[{q:{en:"What did God put between the waters?",es:"¿Qué puso Dios entre las aguas?"},a:[A("☁️","the sky","el cielo",1),A("⛰️","a mountain","una montaña"),A("🌳","a tree","un árbol")],hint:{en:"Look up! What is above the water?",es:"¡Mira arriba! ¿Qué hay sobre el agua?"}}],
+  card:{en:"Day 2: Sky",es:"Día 2: El cielo"}},
+ {day:3,ref:"Gen 1:9–13",spot:[300,400],
+  nar:{en:"God gathered the water into seas, and dry land came up. Then God said, “Grow!” Grass, plants and fruit trees covered the land.",es:"Dios juntó el agua en mares, y apareció la tierra seca. Luego Dios dijo: “¡Crezcan!” Pasto, plantas y árboles con fruto cubrieron la tierra."},
+  qs:[{q:{en:"What grew on the dry land?",es:"¿Qué creció en la tierra seca?"},a:[A("🌿","plants and trees","plantas y árboles",1),A("⭐","stars","estrellas"),A("🐦","birds","aves")],hint:{en:"Look at the ground. What is growing?",es:"Mira el suelo. ¿Qué está creciendo?"}}],
+  card:{en:"Day 3: Land and plants",es:"Día 3: Tierra y plantas"}},
+ {day:4,ref:"Gen 1:14–19",spot:[870,100],
+  nar:{en:"God put lights in the sky: the sun to rule the day, the moon for the night, and the stars too. They mark days, seasons and years.",es:"Dios puso luces en el cielo: el sol para el día, la luna para la noche, y también las estrellas. Marcan los días, las estaciones y los años."},
+  qs:[{q:{en:"Which light did God make for the night?",es:"¿Qué luz hizo Dios para la noche?"},a:[A("🌙","the moon","la luna",1),A("🕯️","a candle","una vela"),A("🔥","a fire","un fuego")],hint:{en:"When the sun goes down, what shines?",es:"Cuando el sol se va, ¿qué brilla?"}}],
+  card:{en:"Day 4: Sun, moon, stars",es:"Día 4: Sol, luna, estrellas"}},
+ {day:5,ref:"Gen 1:20–23",spot:[830,450],
+  nar:{en:"God filled the seas with fish and great sea creatures, and the sky with birds. God blessed them: “Have many babies and fill the earth!”",es:"Dios llenó los mares de peces y grandes animales marinos, y el cielo de aves. Dios los bendijo: “¡Tengan muchas crías y llenen la tierra!”"},
+  qs:[{q:{en:"What did God put in the sky on day 5?",es:"¿Qué puso Dios en el cielo el día 5?"},a:[A("🐦","birds","aves",1),A("🐄","cows","vacas"),A("🧍","people","personas")],hint:{en:"Look up. What is flying?",es:"Mira arriba. ¿Qué está volando?"}}],
+  card:{en:"Day 5: Fish and birds",es:"Día 5: Peces y aves"}},
+ {day:6,ref:"Gen 1:24–25",spot:[250,400],
+  nar:{en:"Then God made animals for the land: big ones, small ones, and ones that creep and crawl. God saw that it was good.",es:"Luego Dios hizo animales para la tierra: grandes, pequeños, y los que se arrastran. Dios vio que era bueno."},
+  qs:[{q:{en:"What did God say about everything He made?",es:"¿Qué dijo Dios de todo lo que hizo?"},a:[A("💛","it is good","es bueno",1),A("🤏","it is too small","es muy pequeño"),A("✖️","it is wrong","está mal")],hint:{en:"Listen to the end again. What did God see?",es:"Escucha el final otra vez. ¿Qué vio Dios?"}}],
+  card:{en:"Day 6: Animals",es:"Día 6: Los animales"}},
+ {day:6,ref:"Gen 1:26–31; 2:7–23",walk:true,
+  nar:{en:"Then God said, “Let us make people like Us.” God made the first man from the dust of the ground and breathed life into him. God put him in a garden called Eden to take care of it. The man gave names to all the animals. Then God made a woman from the man’s side, and the man was so happy. God made people in His own image.",es:"Entonces Dios dijo: “Hagamos a las personas a Nuestra imagen.” Dios formó al primer hombre del polvo de la tierra y sopló vida en él. Dios lo puso en un huerto llamado Edén para cuidarlo. El hombre puso nombre a todos los animales. Luego Dios hizo a una mujer del costado del hombre, y el hombre se alegró mucho. Dios hizo a las personas a Su imagen."},
+  qs:[{q:{en:"God made people like whom?",es:"¿A imagen de quién hizo Dios a las personas?"},a:[A("✨","like God","como Dios",1),A("🐾","like the animals","como los animales"),A("⭐","like the stars","como las estrellas")],hint:{en:"Listen again: “Let us make people like…”",es:"Escucha otra vez: “Hagamos a las personas a…”"}},
+      {q:{en:"What job did God give the man?",es:"¿Qué trabajo le dio Dios al hombre?"},a:[A("🌱","care for the garden","cuidar el huerto",1),A("🏙️","build a city","construir una ciudad"),A("🎣","catch fish","pescar")],hint:{en:"Why did God put him in the garden?",es:"¿Para qué lo puso Dios en el huerto?"}}],
+  card:{en:"Day 6: People",es:"Día 6: Las personas"}},
+ {day:7,ref:"Gen 2:1–3",spot:[500,190],
+  nar:{en:"God finished everything He made. On the seventh day God rested, and He made that day special and holy.",es:"Dios terminó todo lo que hizo. El séptimo día Dios descansó, y lo hizo un día especial y santo."},
+  qs:[{q:{en:"What did God do on the seventh day?",es:"¿Qué hizo Dios el séptimo día?"},a:[A("🌅","He rested","descansó",1),A("🌊","He made the sea","hizo el mar"),A("🌙","He made the moon","hizo la luna")],hint:{en:"The work was finished. What came next?",es:"El trabajo terminó. ¿Qué vino después?"}}],
+  card:{en:"Day 7: Rest",es:"Día 7: Descanso"}}
+];
+const ANIMALS = [["🦁","Lion","León"],["🐑","Sheep","Oveja"],["🐪","Camel","Camello"],["🦅","Eagle","Águila"],["🕊️","Dove","Paloma"],["🐟","Fish","Pez"],["🐎","Horse","Caballo"],["🐐","Goat","Cabra"],["🦉","Owl","Búho"],["🐸","Frog","Rana"],["🦌","Deer","Venado"],["🐇","Rabbit","Conejo"]];
+const VERSE = {
+  KJV:"In the beginning God created the heaven and the earth.",
+  WEB:"In the beginning, God created the heavens and the earth.",
+  RVR1909:"En el principio crió Dios los cielos y la tierra."
+};
+const TODAY = {en:"Go outside and find three things God made. Say thank you for each one.",es:"Sal afuera y busca tres cosas que Dios hizo. Da gracias por cada una."};
+
+/* ---------- state ---------- */
+const KEY = "arca-mvp-v1";
+let S = {screen:"start",i:0,phase:"explore",qi:0,opts:[],wrong:[],cards:[],stickers:[],lang:"en",sound:true,trans:"KJV",best:0};
+try { const s = JSON.parse(localStorage.getItem(KEY)||"null"); if (s) Object.assign(S, s, {screen:"start",phase:"explore",wrong:[]}); } catch(e){}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
+const t = k => UI[S.lang][k];
+const L = o => o[S.lang];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- speech (on-device) ---------- */
+function say(text){
+  if (!S.sound || !("speechSynthesis" in window)) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = S.lang==="es"?"es-MX":"en-US"; u.rate = .9; u.pitch = 1.05; speechSynthesis.speak(u); } catch(e){}
+}
+
+/* ---------- world (canvas) ---------- */
+const cv = document.getElementById("world"), ctx = cv.getContext("2d");
+const W = 1000, H = 560;
+const world = {v:0,target:0};
+const walker = {step:0,x:160,tx:160,alpha:0,beam:0,shown:0,named:[],sleep:0,woman:0,bubble:0,label:null};
+const W7 = {dust:160, naming:330, woman:600, feet:432};
+const STARS = Array.from({length:40},(_,k)=>[(k*137)%1000,(k*71)%230+10,(k%5)+1]);
+const ANIMAL_POS = ANIMALS.map((_,k)=>[70+(k%6)*105, k<6?492:540]);
+const clamp = (x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const lvl = n => clamp(world.v-(n-1));
+
+function emoji(ch,x,y,size,alpha=1){ctx.globalAlpha=alpha;ctx.font=`${size}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(ch,x,y);ctx.globalAlpha=1;}
+function tree(x,y,s,c1="#2f8a4c",c2="#47b062",fruit){
+  ctx.fillStyle="#7a4d2b";ctx.fillRect(x-6*s,y-40*s,12*s,40*s);
+  ctx.fillStyle=c1;ctx.beginPath();ctx.arc(x,y-58*s,30*s,0,7);ctx.fill();
+  ctx.fillStyle=c2;ctx.beginPath();ctx.arc(x-14*s,y-48*s,20*s,0,7);ctx.arc(x+16*s,y-50*s,20*s,0,7);ctx.fill();
+  if(fruit){ctx.fillStyle=fruit;[[-12,-60],[10,-66],[16,-44],[-18,-42],[0,-50]].forEach(([a,b])=>{ctx.beginPath();ctx.arc(x+a*s,y+b*s,4.5*s,0,7);ctx.fill();});}
+}
+function person(x,y,{lying=0,hair="#2a1a10",skin="#b9794c",cloth="#e8dcb4",alpha=1,bob=0}={}){
+  ctx.save();ctx.globalAlpha=alpha;ctx.translate(x,y);ctx.rotate(-lying*Math.PI/2);ctx.translate(0,-bob);
+  ctx.fillStyle=skin;ctx.fillRect(-9,-14,6,14);ctx.fillRect(3,-14,6,14);
+  ctx.fillStyle=cloth;ctx.beginPath();ctx.moveTo(-15,-14);ctx.lineTo(15,-14);ctx.lineTo(10,-50);ctx.lineTo(-10,-50);ctx.closePath();ctx.fill();
+  ctx.fillStyle=skin;ctx.beginPath();ctx.arc(0,-62,12,0,7);ctx.fill();
+  ctx.fillStyle=hair;ctx.beginPath();ctx.arc(0,-65,12.5,Math.PI,0);ctx.fill();
+  ctx.restore();
+}
+function glowSpot(x,y,time){
+  const r = 34 + (reduce?0:Math.sin(time*3)*6);
+  const g = ctx.createRadialGradient(x,y,2,x,y,r*2.2);
+  g.addColorStop(0,"rgba(255,240,180,1)");g.addColorStop(.35,"rgba(255,201,60,.75)");g.addColorStop(1,"rgba(255,201,60,0)");
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r*2.2,0,7);ctx.fill();
+}
+function bubble(x,y,text){
+  ctx.font='800 22px Grandstander, "Comic Sans MS", sans-serif';const w=ctx.measureText(text).width+28;
+  ctx.fillStyle="#fff";ctx.beginPath();ctx.roundRect(x-w/2,y-46,w,38,14);ctx.fill();
+  ctx.beginPath();ctx.moveTo(x-8,y-9);ctx.lineTo(x,y+4);ctx.lineTo(x+8,y-9);ctx.fill();
+  ctx.fillStyle="#1b2340";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(text,x,y-27);
+}
+
+function draw(time){
+  time/=1000;
+  const dt = Math.min(.05, time-(draw.last||time)); draw.last=time;
+  const speed = reduce?4:.7;
+  if (world.v<world.target) world.v=Math.min(world.target,world.v+dt*speed);
+  if (world.v>world.target) world.v=world.target;
+  const a1=lvl(1),a2=lvl(2),a3=lvl(3),a4=lvl(4),a5=lvl(5),a6=lvl(6),a7=lvl(7),a8=lvl(8);
+
+  ctx.fillStyle="#08111f";ctx.fillRect(0,0,W,H);
+  // day 1: light on the water
+  if(a1>0){ctx.globalAlpha=a1;let g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,"#5aa0c4");g.addColorStop(1,"#1d5a7c");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    ctx.globalAlpha=a1*(1-a2*.8);g=ctx.createRadialGradient(500,240,10,500,240,520);g.addColorStop(0,"rgba(255,244,200,.95)");g.addColorStop(1,"rgba(255,244,200,0)");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;}
+  // Spirit over the dark water
+  if(a1<1){ctx.strokeStyle=`rgba(220,235,255,${.35*(1-a1)})`;ctx.lineWidth=2;for(let k=0;k<5;k++){ctx.beginPath();for(let x=0;x<=W;x+=20){const y=300+k*40+Math.sin(x/90+time*(reduce?0:.8)+k)*10;x?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}}
+  // day 2: sky above, water below
+  if(a2>0){ctx.globalAlpha=a2;const g=ctx.createLinearGradient(0,0,0,300);g.addColorStop(0,"#8fcdf5");g.addColorStop(1,"#e4f4ff");ctx.fillStyle=g;ctx.fillRect(0,0,W,300*a2+0);
+    const s=ctx.createLinearGradient(0,300,0,H);s.addColorStop(0,"#3c8dc2");s.addColorStop(1,"#1d5a8c");ctx.fillStyle=s;ctx.fillRect(0,300,W,H-300);
+    ctx.fillStyle="rgba(255,255,255,.5)";for(let k=0;k<8;k++){ctx.fillRect((k*137+time*(reduce?0:12))%W,330+k*25,40,2);}ctx.globalAlpha=1;}
+  // day 4: lights in the sky
+  if(a4>0){ctx.globalAlpha=a4;let g=ctx.createRadialGradient(870,95,10,870,95,110);g.addColorStop(0,"rgba(255,226,120,1)");g.addColorStop(.4,"rgba(255,201,60,.9)");g.addColorStop(1,"rgba(255,201,60,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(870,95,110,0,7);ctx.fill();
+    ctx.fillStyle="#fffbe8";ctx.beginPath();ctx.arc(110,70,28,0,7);ctx.fill();ctx.fillStyle="#b9e0fa";ctx.beginPath();ctx.arc(124,62,25,0,7);ctx.fill();
+    STARS.forEach(([x,y,s])=>{ctx.globalAlpha=a4*(.35+.3*Math.sin(time*2+s+x));ctx.fillStyle="#fff";ctx.fillRect(x,y,s>3?3:2,s>3?3:2);});ctx.globalAlpha=1;}
+  // day 3: land and plants
+  if(a3>0){ctx.save();ctx.translate(0,(1-a3)*260);
+    const g=ctx.createLinearGradient(0,260,0,H);g.addColorStop(0,"#6cc46f");g.addColorStop(1,"#2f7d43");ctx.fillStyle=g;
+    ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(0,320);ctx.quadraticCurveTo(170,250,360,315);ctx.quadraticCurveTo(540,372,700,332);ctx.lineTo(760,H);ctx.closePath();ctx.fill();
+    tree(70,318,a3,"#2f8a4c","#47b062","#e5484d");tree(225,296,a3*.9);tree(660,350,a3*.8,"#2f8a4c","#47b062","#f2a33a");
+    ctx.fillStyle="#ffe066";[[120,360],[300,350],[410,372],[520,385],[600,370],[180,380]].forEach(([x,y])=>{ctx.beginPath();ctx.arc(x,y,4*a3,0,7);ctx.fill();});
+    ctx.restore();}
+  // day 5: sea creatures and birds
+  if(a5>0){const m=reduce?0:time;
+    [[820,420,32],[900,500,28],[760,520,26],[960,400,24]].forEach(([x,y,s],k)=>emoji("🐟",x+Math.sin(m*.8+k)*30,y+Math.sin(m*1.3+k)*6,s,a5));
+    emoji("🐋",880+Math.sin(m*.3)*40,470,64,a5);
+    [[300,90],[420,140],[640,70]].forEach(([x,y],k)=>emoji("🕊️",(x+m*25*(k+1))%1060-30,y+Math.sin(m*2+k)*8,30,a5));}
+  // day 6: land animals
+  if(a6>0){[["🐄",120,388,40],["🐑",300,370,34],["🦁",470,402,40],["🐇",560,410,28],["🐌",390,412,24],["🐎",620,392,38]].forEach(([c,x,y,s],k)=>emoji(c,x,y-(reduce?0:Math.abs(Math.sin(time*2+k))*3),s,a6));}
+  // day 6 (people): the garden
+  if(a7>0 && S.i>=6){ctx.globalAlpha=a7;ctx.strokeStyle="#6bc0ef";ctx.lineWidth=16;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(430,300);ctx.quadraticCurveTo(380,430,250,560);ctx.stroke();
+    const g=ctx.createRadialGradient(470,270,5,470,270,90);g.addColorStop(0,"rgba(255,226,120,.8)");g.addColorStop(1,"rgba(255,226,120,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(470,270,90,0,7);ctx.fill();
+    tree(470,345,1.15,"#3a9b55","#5cc070","#ffd23f");tree(545,352,1,"#2c7a44","#3f9d5a","#c0392b");ctx.globalAlpha=1;
+    // the people
+    const w=walker;
+    if(S.i===6&&S.screen==="scene"){
+    if(w.beam>0){ctx.fillStyle=`rgba(255,240,180,${w.beam*.7})`;ctx.fillRect(W7.dust-40,0,80,W7.feet);}
+    if(w.step>=2 && S.i===6) ANIMALS.forEach(([c],k)=>{ if(k<w.shown){const [x,y]=ANIMAL_POS[k];const done=w.named.includes(k);emoji(c,x,y,done?34:40,done?.55:1);}});
+    if(w.alpha>0){const moving=Math.abs(w.tx-w.x)>2;person(w.x,W7.feet,{alpha:w.alpha,lying:w.sleep,bob:moving&&!reduce?Math.abs(Math.sin(time*10))*3:0});}
+    if(w.woman>0)person(w.x+46,W7.feet,{alpha:w.woman,hair:"#3b2414",skin:"#a96b42",cloth:"#d9e8c4"});
+    if(w.label&&time<w.label.until)bubble(w.label.x,w.label.y-24,w.label.text);
+    if(w.bubble&&time<w.bubble)bubble(w.x,W7.feet-80,S.lang==="es"?"¡Por fin!":"At last!");
+    }
+  }
+  // day 7: golden rest
+  if(a8>0){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,`rgba(255,170,80,${.45*a8})`);g.addColorStop(1,`rgba(255,120,60,${.25*a8})`);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    person(300,432,{alpha:a8});person(346,432,{alpha:a8,hair:"#3b2414",skin:"#a96b42",cloth:"#d9e8c4"});}
+
+  // the next thing to tap
+  if(S.screen==="scene"&&S.phase==="explore"){
+    const sc=SCENES[S.i];
+    if(!sc.walk&&world.v>=world.target-.001) glowSpot(sc.spot[0],sc.spot[1],time);
+    if(sc.walk){const w=walker; const next=w.step===0?W7.dust:w.step===1?W7.naming:w.step===3?W7.woman:null; if(next!==null&&world.v>=7) glowSpot(next,W7.feet-30,time);}
+  }
+  stepWalker(dt,time);
+  requestAnimationFrame(draw);
+}
+
+/* ---------- scene 7: walking ---------- */
+function stepWalker(dt,time){
+  const w=walker; if(S.screen!=="scene"||S.i!==6) return;
+  w.beam=Math.max(0,w.beam-dt*.6);
+  if(w.step>=1&&w.alpha<1) w.alpha=Math.min(1,w.alpha+dt*.8);
+  if(w.step===1||w.step===3){const d=w.tx-w.x;w.x+=Math.sign(d)*Math.min(Math.abs(d),dt*170);}
+  if(w.step===2&&w.shown<ANIMALS.length){w.timer=(w.timer||0)+dt;if(w.timer>(reduce?.05:.35)){w.timer=0;w.shown++;}}
+  if(w.step===1&&Math.abs(w.x-W7.naming)<8){w.step=2;w.shown=0;renderPanel();say(t("name"));}
+  if(w.step===3&&Math.abs(w.x-W7.woman)<8){w.step=4;w.sleep=1;
+    setTimeout(()=>{w.beam=1;w.woman=0;const fade=setInterval(()=>{w.woman=Math.min(1,w.woman+.05);if(w.woman>=1)clearInterval(fade);},40);},900);
+    setTimeout(()=>{w.sleep=0;w.bubble=performance.now()/1000+3;},1900);
+    setTimeout(()=>{if(S.i===6)toQuestions();},3600);}
+}
+function onWorldTap(x,y){
+  if(S.screen!=="scene"||S.phase!=="explore")return;
+  const sc=SCENES[S.i];
+  if(!sc.walk){ if(world.v<world.target-.001)return; if(Math.hypot(x-sc.spot[0],y-sc.spot[1])<110) reveal(); else flashTip(); return; }
+  const w=walker; if(world.v<7)return;
+  if(w.step===0){ if(Math.abs(x-W7.dust)<90){w.beam=1;w.step=1;w.x=w.tx=W7.dust;} else flashTip(); return; }
+  if(w.step===2){
+    let hit=-1;ANIMAL_POS.forEach(([ax,ay],k)=>{if(k<w.shown&&Math.hypot(x-ax,y-ay)<36)hit=k;});
+    if(hit>=0&&!w.named.includes(hit)){w.named.push(hit);const n=ANIMALS[hit][S.lang==="es"?2:1];w.label={text:n,x:ANIMAL_POS[hit][0],y:ANIMAL_POS[hit][1],until:performance.now()/1000+1.6};say(n);
+      if(!S.stickers.includes(hit))S.stickers.push(hit);save();
+      if(w.named.length===ANIMALS.length){w.step=3;setTimeout(()=>{renderPanel();say(t("walk"));},900);} renderPanel();}
+    return;
+  }
+  if(w.step===1||w.step===3){ if(y>300) w.tx=clamp(x,60,700); }
+}
+let tipTimer;
+function flashTip(){const el=document.getElementById("tip");if(!el)return;el.style.color="var(--sea)";clearTimeout(tipTimer);tipTimer=setTimeout(()=>el.style.color="",900);}
+
+/* ---------- flow ---------- */
+const shuffle = a => a.map(v=>[Math.random(),v]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]);
+function enter(i){
+  S.screen="scene";S.i=i;S.phase="explore";S.qi=0;S.wrong=[];
+  world.target = i===6 ? 7 : i; if(world.v>world.target) world.v=world.target;
+  if(i===6) Object.assign(walker,{step:0,x:W7.dust,tx:W7.dust,alpha:0,beam:0,shown:0,named:[],sleep:0,woman:0,bubble:0,label:null});
+  save();renderPanel();say(L(SCENES[i].nar));
+}
+function reveal(){world.target=S.i+1;setTimeout(toQuestions,reduce?300:1500);}
+function toQuestions(){S.phase="q";S.qi=0;setQ();}
+function setQ(){S.wrong=[];S.opts=shuffle(SCENES[S.i].qs[S.qi].a.map((_,k)=>k));renderPanel();say(L(SCENES[S.i].qs[S.qi].q));}
+function answer(k){
+  const q=SCENES[S.i].qs[S.qi];const a=q.a[k];
+  if(S.phase!=="q"||S.wrong.includes(k))return false;
+  if(a.ok){
+    const p=t("praise");say(p[Math.floor(Math.random()*p.length)]);
+    if(S.qi<SCENES[S.i].qs.length-1){S.qi++;setTimeout(setQ,700);renderPanel(k);return true;}
+    if(!S.cards.includes(S.i))S.cards.push(S.i);S.phase="done";S.best=Math.max(S.best,S.i+1);save();renderPanel();return true;
+  }
+  S.wrong.push(k);renderPanel();say(L(q.hint));return false;
+}
+function next(){ if(S.i<7) enter(S.i+1); else finish(); }
+function finish(){S.screen="end";world.target=8;save();renderPanel();say(t("doneT")+". "+t("stop"));}
+
+/* ---------- panel ---------- */
+const panel=document.getElementById("panel");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function renderCards(){
+  document.getElementById("cards").innerHTML=SCENES.map((s,k)=>`<span class="slot${S.cards.includes(k)?" on":""}" title="${esc(L(s.card))}">${s.day}</span>`).join("");
+  document.getElementById("langBtn").textContent=S.lang==="en"?"ES":"EN";
+  document.getElementById("soundBtn").setAttribute("aria-pressed",String(S.sound));
+}
+function renderPanel(justRight){
+  renderCards();
+  if(S.screen==="start"){
+    const resume=S.best>0&&S.best<8;
+    panel.innerHTML=`<div class="eyebrow">${t("genesis")}</div><h2>${esc(t("intro"))}</h2>
+      <div class="row"><button class="btn" id="go" type="button">${t("start")}</button>${resume?`<button class="btn quiet" id="resume" type="button">${t("cont")} · ${S.best+1}/8</button>`:""}</div>`;
+    panel.querySelector("#go").onclick=()=>{S.cards=[];S.best=0;world.v=0;enter(0);};
+    if(resume)panel.querySelector("#resume").onclick=()=>{world.v=S.best===6?6:S.best;enter(S.best);};
+    return;
+  }
+  if(S.screen==="end"){
+    const trs=S.lang==="es"?["RVR1909"]:["KJV","WEB"]; if(!trs.includes(S.trans))S.trans=trs[0];
+    panel.innerHTML=`<div class="eyebrow">${t("genesis")}</div><h2>${t("doneT")}</h2>
+      <div class="recap">${SCENES.map(s=>`<span>${esc(L(s.card))}</span>`).join("")}</div>
+      <div class="row"><button class="btn quiet" id="readAll" type="button">🔊 ${t("read")}</button></div>
+      <div><div class="eyebrow">${t("verse")} · ${S.lang==="es"?"Génesis":"Genesis"} 1:1</div>
+      <blockquote>${esc(VERSE[S.trans])}<cite>${S.trans}</cite></blockquote>
+      ${trs.length>1?`<div class="row" style="margin-top:8px"><select id="trans" aria-label="Translation">${trs.map(x=>`<option${x===S.trans?" selected":""}>${x}</option>`).join("")}</select><button class="btn quiet" id="sayVerse" type="button">🔊 ${t("listen")}</button></div>`:`<div class="row" style="margin-top:8px"><button class="btn quiet" id="sayVerse" type="button">🔊 ${t("listen")}</button></div>`}</div>
+      <div><div class="eyebrow">${t("today")}</div><p class="story">${esc(L(TODAY))}</p></div>
+      <h2>${t("stop")}</h2>
+      <div class="row"><button class="btn quiet" id="again" type="button">${t("again")}</button></div>`;
+    panel.querySelector("#readAll").onclick=()=>say(SCENES.map(s=>L(s.card)).join(". "));
+    panel.querySelector("#sayVerse").onclick=()=>say(VERSE[S.trans]);
+    const sel=panel.querySelector("#trans");if(sel)sel.onchange=e=>{S.trans=e.target.value;save();renderPanel();};
+    panel.querySelector("#again").onclick=()=>{S.cards=[];S.best=0;world.v=0;world.target=0;S.screen="start";save();renderPanel();};
+    return;
+  }
+  const sc=SCENES[S.i];
+  const head=`<div class="eyebrow">${S.lang==="es"?"Escena":"Scene"} ${S.i+1} / 8 · ${sc.ref}</div>`;
+  if(S.phase==="explore"){
+    let tip=t("tap");
+    if(sc.walk){const st=walker.step;tip=st===2?`${t("name")} (${walker.named.length}/12)`:st===0?t("tap"):t("walk");}
+    panel.innerHTML=`${head}<p class="story">${esc(L(sc.nar))}</p>
+      <div class="row"><button class="btn quiet" id="listen" type="button">🔊 ${t("listen")}</button><p class="tip" id="tip">${esc(tip)}</p></div>`;
+    panel.querySelector("#listen").onclick=()=>say(L(sc.nar));
+    return;
+  }
+  if(S.phase==="q"){
+    const q=sc.qs[S.qi];
+    const hint=S.wrong.length?`<p class="hint"><b>${t("hintT")}:</b> ${esc(L(q.hint))}</p>`:"";
+    panel.innerHTML=`${head}<h2>${esc(L(q.q))}</h2>
+      <div class="answers">${S.opts.map(k=>{const a=q.a[k];const cls=S.wrong.includes(k)?" no":(justRight===k?" yes":"");return `<button class="ans${cls}" type="button" data-k="${k}"${S.wrong.includes(k)?' aria-disabled="true"':""}><span class="pic" aria-hidden="true">${a.p}</span>${esc(L(a))}</button>`;}).join("")}</div>
+      ${hint}<div class="row"><button class="btn quiet" id="listen" type="button">🔊 ${t("listen")}</button></div>`;
+    panel.querySelectorAll(".ans").forEach(b=>b.onclick=()=>answer(+b.dataset.k));
+    panel.querySelector("#listen").onclick=()=>say(L(q.q));
+    return;
+  }
+  panel.innerHTML=`${head}<div class="won"><div class="big">${sc.day}</div><div><div class="eyebrow">${t("card")}</div><h2>${esc(L(sc.card))}</h2></div></div>
+    <div class="row"><button class="btn" id="next" type="button">${S.i<7?t("next"):t("doneT")} →</button></div>`;
+  panel.querySelector("#next").onclick=next;
+}
+
+/* ---------- grown-ups (adult gate) ---------- */
+const dlg=document.getElementById("adult"),body=document.getElementById("adultBody");
+function openAdult(){
+  const a=11+Math.floor(Math.random()*8),b=6+Math.floor(Math.random()*7);
+  body.innerHTML=`<h3>For grown-ups</h3><p>Answer to continue: what is ${a} + ${b}?</p>
+    <form id="gate" class="row"><input id="gateIn" inputmode="numeric" autocomplete="off" aria-label="Answer" style="width:90px"><button class="btn" type="submit">Open</button><button class="btn quiet" type="button" id="gateX">Close</button></form><p class="tip" id="gateMsg"></p>`;
+  body.querySelector("#gateX").onclick=()=>dlg.close();
+  body.querySelector("#gate").onsubmit=e=>{e.preventDefault();if(+body.querySelector("#gateIn").value===a+b)adultPanel();else body.querySelector("#gateMsg").textContent="Not quite. Try again.";};
+  dlg.showModal();
+}
+function adultPanel(){
+  body.innerHTML=`<h3>For grown-ups</h3>
+    <ul class="list">
+      <li>Demo build of Chapter 1 (Genesis 1:1–2:3). Story text is a draft and not yet signed off.</li>
+      <li>Progress stays on this device. No accounts, ads or tracking.</li>
+      <li>Read-aloud uses this device’s own voice.</li>
+      <li>Animal stickers named: ${S.stickers.length} of 12.</li>
+      <li>Art is placeholder for the demo.</li>
+    </ul>
+    <div class="row" style="margin-top:14px"><button class="btn quiet" id="reset" type="button">Reset progress</button><button class="btn" id="done" type="button">Done</button></div><p class="tip" id="resetMsg"></p>`;
+  body.querySelector("#done").onclick=()=>dlg.close();
+  body.querySelector("#reset").onclick=e=>{
+    if(e.target.dataset.sure){S.cards=[];S.stickers=[];S.best=0;S.screen="start";world.v=world.target=0;save();renderPanel();dlg.close();}
+    else{e.target.dataset.sure="1";e.target.textContent="Tap again to reset";}
+  };
+}
+
+/* ---------- wiring ---------- */
+cv.addEventListener("pointerdown",e=>{const r=cv.getBoundingClientRect();onWorldTap((e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height);});
+document.getElementById("langBtn").onclick=()=>{S.lang=S.lang==="en"?"es":"en";save();renderPanel();};
+document.getElementById("soundBtn").onclick=()=>{S.sound=!S.sound;if(!S.sound)try{speechSynthesis.cancel();}catch(e){}save();renderCards();};
+document.getElementById("adultBtn").onclick=openAdult;
+
+/* playtest adapter */
+window.ARCA={
+  state:()=>({screen:S.screen,scene:S.i+1,phase:S.phase,question:S.qi,cards:S.cards.length,world:+world.v.toFixed(2),walkStep:walker.step,named:walker.named.length,lang:S.lang}),
+  start:()=>{S.cards=[];S.best=0;world.v=0;enter(0);},
+  tapSpot:()=>{const sc=SCENES[S.i];if(!sc.walk){world.v=world.target;reveal();}},
+  answerRight:()=>{const q=SCENES[S.i].qs[S.qi];return answer(q.a.findIndex(a=>a.ok));},
+  answerWrong:()=>{const q=SCENES[S.i].qs[S.qi];return answer(q.a.findIndex((a,k)=>!a.ok&&!S.wrong.includes(k)));},
+  next:()=>next(),
+  tap:(x,y)=>onWorldTap(x,y)
+};
+
+renderPanel();
+requestAnimationFrame(draw);
+})();
+</script>
+
+</html>
